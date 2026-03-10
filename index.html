@@ -4,70 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo List</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Todo List</h1>
-        </header>
-        <main>
-            <form id="add-task-form">
-                <input type="text" id="task-input" name="task" required placeholder="Add a new task">
-                <button type="submit" id="add-task-btn">Add Task</button>
-            </form>
-            <ul id="todo-list">
-                {% for todo in todos %}
-                    <li class="{{ 'completed' if todo.completed else '' }}">
-                        {{ todo.task }}
-                        <div>
-                            <button onclick="toggleTask({{ todo.id }})">Toggle</button>
-                            <button onclick="deleteTask({{ todo.id }})">Delete</button>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </main>
+    <div id="app">
+        <h1>Todo List</h1>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="register()">Register</button>
+        <button onclick="login()">Login</button>
+        <button onclick="logout()">Logout</button>
+        <input type="text" id="taskTitle" placeholder="Task Title">
+        <input type="text" id="taskDescription" placeholder="Task Description">
+        <button onclick="addTask()">Add Task</button>
+        <ul id="tasks"></ul>
     </div>
-
-    <script>
-        document.getElementById('add-task-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const taskInput = document.getElementById('task-input');
-            fetch('/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `task=${encodeURIComponent(taskInput.value)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                }
-            });
-        });
-
-        function toggleTask(id) {
-            fetch(`/toggle/${id}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    }
-                });
-        }
-
-        function deleteTask(id) {
-            fetch(`/delete/${id}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    }
-                });
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="app.js"></script>
 </body>
 </html>

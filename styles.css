@@ -1,88 +1,68 @@
-/* styles.css */
-
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
+/* Reset some default browser styles */
+body, ul {
     margin: 0;
     padding: 0;
 }
 
-.container {
-    width: 80%;
-    margin: auto;
-    overflow: hidden;
+/* Style the app container */
+#app {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-header {
-    background: #333;
-    color: white;
-    padding-top: 20px;
-    min-height: 75px;
-    border-bottom: #e8491d 3px solid;
-}
-
-header h1 {
-    margin-left: 20px;
-    float: left;
-    font-size: 2em;
-    line-height: 65px;
-    text-transform: uppercase;
-    letter-spacing: -.5px;
-}
-
-#main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-}
-
-#task-input {
-    width: 70%;
+/* Style input fields */
+input[type="text"], input[type="password"] {
+    width: calc(50% - 10px);
     padding: 10px;
-    font-size: 1em;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-#add-task-btn {
+/* Style buttons */
+button {
     padding: 10px 20px;
-    background-color: #e8491d;
-    color: white;
+    margin-bottom: 10px;
     border: none;
+    background-color: #28a745;
+    color: white;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 1em;
 }
 
-#task-input:focus, #add-task-btn:focus {
-    outline: none;
+button:hover {
+    background-color: #218838;
 }
 
-ul {
+/* Style the task list */
+ul#tasks {
     list-style-type: none;
-    padding: 0;
-    margin-top: 20px;
 }
 
-li {
-    background: white;
-    border-bottom: #ddd 1px solid;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+li.task {
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
 }
 
-li.completed {
+li.task.completed {
     text-decoration: line-through;
     color: #888;
 }
 
-li button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1em;
+/* Style the task title and description */
+li.task .title {
+    font-weight: bold;
 }
 
-li button:hover {
-    color: #e8491d;
+li.task .description {
+    display: block;
+    margin-top: 5px;
+    color: #666;
 }

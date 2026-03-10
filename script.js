@@ -1,73 +1,89 @@
-// script.js
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to add a new task
-    document.getElementById('add-task-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const taskInput = document.getElementById('task-input');
-        fetch('/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new Vue({
+        el: '#app',
+        data: {
+            username: '',
+            password: '',
+            taskTitle: '',
+            taskDescription: '',
+            tasks: []
+        },
+        methods: {
+            async register() {
+                try {
+                    const response = await fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: this.username, password: this.password })
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                } catch (error) {
+                    console.error('Error registering:', error);
+                }
             },
-            body: `task=${encodeURIComponent(taskInput.value)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                taskInput.value = '';
-                loadTodos();
+            async login() {
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: this.username, password: this.password })
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                    if (data.message === 'Login successful') {
+                        this.fetchTasks();
+                    }
+                } catch (error) {
+                    console.error('Error logging in:', error);
+                }
+            },
+            async logout() {
+                try {
+                    const response = await fetch('/logout', { method: 'POST' });
+                    const data = await response.json();
+                    alert(data.message);
+                    this.tasks = [];
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                }
+            },
+            async addTask() {
+                try {
+                    const response = await fetch('/tasks', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: this.taskTitle, description: this.taskDescription })
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                    if (data.message === 'Task created successfully') {
+                        this.fetchTasks();
+                    }
+                } catch (error) {
+                    console.error('Error adding task:', error);
+                }
+            },
+            async fetchTasks() {
+                try {
+                    const response = await fetch('/tasks');
+                    const data = await response.json();
+                    this.tasks = data;
+                } catch (error) {
+                    console.error('Error fetching tasks:', error);
+                }
             }
-        });
+        },
+        watch: {
+            tasks(newVal) {
+                const taskList = document.getElementById('tasks');
+                taskList.innerHTML = '';
+                newVal.forEach(task => {
+                    const li = document.createElement('li');
+                    li.textContent = `${task.title} - ${task.description}`;
+                    taskList.appendChild(li);
+                });
+            }
+        }
     });
-
-    // Function to toggle the completion status of a task
-    function toggleTask(id) {
-        fetch(`/toggle/${id}`, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadTodos();
-                }
-            });
-    }
-
-    // Function to delete a task
-    function deleteTask(id) {
-        fetch(`/delete/${id}`, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadTodos();
-                }
-            });
-    }
-
-    // Function to load and display tasks from the server
-    function loadTodos() {
-        fetch('/')
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const todoList = document.getElementById('todo-list');
-                todoList.innerHTML = doc.getElementById('todo-list').innerHTML;
-                
-                // Add event listeners to dynamically added buttons
-                document.querySelectorAll('.toggle-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        toggleTask(parseInt(this.getAttribute('data-id')));
-                    });
-                });
-
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        deleteTask(parseInt(this.getAttribute('data-id')));
-                    });
-                });
-            });
-    }
-
-    // Load initial tasks when the page loads
-    loadTodos();
 });
