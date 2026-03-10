@@ -4,109 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo List</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <style>
-        body {
-            padding: 20px;
-        }
-        .task {
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container mt-5">
         <h1>Todo List</h1>
-        <div class="row">
-            <form id="addTaskForm">
-                <div class="input-field col s6">
-                    <input type="text" id="title" v-model="newTask.title" required>
-                    <label for="title">Title</label>
-                </div>
-                <div class="input-field col s6">
-                    <textarea id="description" v-model="newTask.description" class="materialize-textarea" required></textarea>
-                    <label for="description">Description</label>
-                </div>
-                <button type="submit" class="btn waves-effect waves-light">Add Task</button>
-            </form>
-        </div>
-        <ul id="taskList">
-            <li v-for="task in tasks" :key="task.id" class="task">
-                <h5>{{ task.title }}</h5>
-                <p>{{ task.description }}</p>
-                <label>
-                    <input type="checkbox" :checked="task.completed" @change="updateTask(task.id, !task.completed)">
-                    <span>Completed</span>
-                </label>
-            </li>
-        </ul>
+        <form id="loginForm" style="display: none;">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <button id="logoutBtn" class="btn btn-danger" style="display: none;">Logout</button>
+        <form id="todoForm">
+            <div class="form-group">
+                <label for="task">Task:</label>
+                <input type="text" class="form-control" id="task" required>
+            </div>
+            <button type="submit" class="btn btn-success">Add Todo</button>
+        </form>
+        <ul id="todoList"></ul>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
-        const app = Vue.createApp({
-            data() {
-                return {
-                    newTask: {
-                        title: '',
-                        description: ''
-                    },
-                    tasks: []
-                };
-            },
-            methods: {
-                async addTask() {
-                    try {
-                        const response = await fetch('/tasks', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(this.newTask)
-                        });
-                        const result = await response.json();
-                        alert(result.message);
-                        this.fetchTasks();
-                        this.newTask.title = '';
-                        this.newTask.description = '';
-                    } catch (error) {
-                        console.error('Error adding task:', error);
-                    }
-                },
-                async fetchTasks() {
-                    try {
-                        const response = await fetch('/tasks');
-                        const result = await response.json();
-                        this.tasks = result.tasks;
-                    } catch (error) {
-                        console.error('Error fetching tasks:', error);
-                    }
-                },
-                async updateTask(id, completed) {
-                    try {
-                        const response = await fetch(`/tasks/${id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ title: this.tasks.find(task => task.id === id).title, description: this.tasks.find(task => task.id === id).description, completed })
-                        });
-                        const result = await response.json();
-                        alert(result.message);
-                        this.fetchTasks();
-                    } catch (error) {
-                        console.error('Error updating task:', error);
-                    }
-                }
-            },
-            mounted() {
-                this.fetchTasks();
-                M.AutoInit();
-            }
-        });
+        const apiURL = 'http://localhost:5000';
 
-        app.mount('#app');
+        function login(username, password) {
+            $.post(`${apiURL}/login`, { username, password })
+                .done(token => {
+                    localStorage.setItem('token', token);
+                    $('#loginForm').hide();
+                    $('#logoutBtn').show();
+                    loadTodos();
+                })
+                .fail(() => alert('Invalid credentials'));
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            $('#loginForm').show();
+            $('#logoutBtn').hide();
+            $('#todoList').empty();
+        }
+
+        function createTodo(task) {
+            $.post(`${apiURL}/todos`, { task }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+                .done(() => loadTodos())
+                .fail(() => alert('Failed to add todo'));
+        }
+
+        function updateTodo(todoId, completed) {
+            $.put(`${apiURL}/todos/${todoId}`, { completed }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+                .done(() => loadTodos())
+                .fail(() => alert('Failed to update todo'));
+        }
+
+        function deleteTodo(todoId) {
+            $.ajax({
+                url: `${apiURL}/todos/${todoId}`,
+                type: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                success: () => loadTodos(),
+                error: () => alert('Failed to delete todo')
+            });
+        }
+
+        function loadTodos() {
+            $.get(`${apiURL}/todos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+                .done(todos => {
+                    $('#todoList').empty();
+                    todos.forEach(todo => {
+                        const li = $('<li>').text(todo.task);
+                        if (todo.completed) {
+                            li.addClass('text-decoration-line-through');
+                        }
+                        li.append(
+                            $('<button>').addClass('btn btn-sm btn-danger ml-2').text('Delete').click(() => deleteTodo(todo.id)),
+                            $('<input>').type('checkbox').prop('checked', todo.completed).change(() => updateTodo(todo.id, !todo.completed))
+                        );
+                        $('#todoList').append(li);
+                    });
+                })
+                .fail(() => alert('Failed to load todos'));
+        }
+
+        $(document).ready(() => {
+            $('#loginForm').on('submit', e => {
+                e.preventDefault();
+                const username = $('#username').val();
+                const password = $('#password').val();
+                login(username, password);
+            });
+
+            $('#logoutBtn').on('click', logout);
+
+            $('#todoForm').on('submit', e => {
+                e.preventDefault();
+                const task = $('#task').val();
+                createTodo(task);
+                $('#task').val('');
+            });
+        });
     </script>
 </body>
 </html>

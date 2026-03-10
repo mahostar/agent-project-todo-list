@@ -1,79 +1,84 @@
-// script.js
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Materialize components
-    M.AutoInit();
-});
+const apiURL = 'http://localhost:5000';
 
-const app = Vue.createApp({
-    data() {
-        return {
-            newTask: {
-                title: '',
-                description: ''
-            },
-            tasks: []
-        };
-    },
-    methods: {
-        async addTask() {
-            try {
-                const response = await fetch('/tasks', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(this.newTask)
-                });
-                const result = await response.json();
-                alert(result.message);
-                this.fetchTasks();
-                this.newTask.title = '';
-                this.newTask.description = '';
-            } catch (error) {
-                console.error('Error adding task:', error);
-            }
-        },
-        async fetchTasks() {
-            try {
-                const response = await fetch('/tasks');
-                const tasksData = await response.json();
-                this.tasks = tasksData.tasks;
-            } catch (error) {
-                console.error('Error fetching tasks:', error);
-            }
-        },
-        async updateTask(taskId, completed) {
-            try {
-                const response = await fetch(`/tasks/${taskId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ completed })
-                });
-                const result = await response.json();
-                alert(result.message);
-                this.fetchTasks();
-            } catch (error) {
-                console.error('Error updating task:', error);
-            }
-        },
-        async deleteTask(taskId) {
-            try {
-                const response = await fetch(`/tasks/${taskId}`, {
-                    method: 'DELETE'
-                });
-                const result = await response.json();
-                alert(result.message);
-                this.fetchTasks();
-            } catch (error) {
-                console.error('Error deleting task:', error);
-            }
-        }
-    },
-    mounted() {
-        this.fetchTasks();
+function login(username, password) {
+    $.post(`${apiURL}/login`, { username, password })
+        .done(token => {
+            localStorage.setItem('token', token);
+            $('#loginForm').hide();
+            $('#logoutBtn').show();
+            loadTodos();
+        })
+        .fail(() => alert('Invalid credentials'));
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    $('#loginForm').show();
+    $('#logoutBtn').hide();
+    $('#todoList').empty();
+}
+
+function createTodo(task) {
+    $.post(`${apiURL}/todos`, { task }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        .done(() => loadTodos())
+        .fail(() => alert('Failed to add todo'));
+}
+
+function updateTodo(todoId, completed) {
+    $.put(`${apiURL}/todos/${todoId}`, { completed }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        .done(() => loadTodos())
+        .fail(() => alert('Failed to update todo'));
+}
+
+function deleteTodo(todoId) {
+    $.ajax({
+        url: `${apiURL}/todos/${todoId}`,
+        type: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        success: () => loadTodos(),
+        error: () => alert('Failed to delete todo')
+    });
+}
+
+function loadTodos() {
+    $.get(`${apiURL}/todos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        .done(todos => {
+            $('#todoList').empty();
+            todos.forEach(todo => {
+                const li = $('<li>').text(todo.task);
+                const deleteBtn = $('<button>').addClass('btn btn-danger btn-sm ml-2').text('Delete');
+                deleteBtn.click(() => deleteTodo(todo.id));
+                li.append(deleteBtn);
+                if (todo.completed) {
+                    li.addClass('text-decoration-line-through');
+                }
+                $('#todoList').append(li);
+            });
+        })
+        .fail(() => alert('Failed to load todos'));
+}
+
+$(document).ready(function() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        $('#loginForm').hide();
+        $('#logoutBtn').show();
+        loadTodos();
     }
-});
 
-app.mount('#app');
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        const username = $('#username').val();
+        const password = $('#password').val();
+        login(username, password);
+    });
+
+    $('#logoutBtn').click(logout);
+
+    $('#todoForm').on('submit', function(e) {
+        e.preventDefault();
+        const task = $('#task').val();
+        createTodo(task);
+        $('#task').val('');
+    });
+});

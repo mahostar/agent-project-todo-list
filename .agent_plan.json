@@ -6,9 +6,9 @@
     "styles.css"
   ],
   "descriptions": {
-    "app.py": "Handles the backend logic for user authentication and task management using an actual database.",
-    "index.html": "The main HTML file that serves as the entry point of the application, incorporating Vue.js for dynamic UI updates.",
-    "script.js": "Contains the JavaScript code to handle client-side interactions, including task creation, editing, and deletion.",
-    "styles.css": "Defines the styling for the application, making it visually appealing with a stunning UI."
+    "app.py": "Handles task management endpoints with authentication and authorization.",
+    "index.html": "Provides a user interface for the todo list, including login/logout functionality.",
+    "script.js": "Manages interactivity in the Vue component, adding delete functionality for tasks.",
+    "styles.css": "Stylizes the UI to make it advanced, stunning, and user-friendly."
   }
 }

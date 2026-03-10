@@ -1,100 +1,90 @@
-import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
-    tasks = db.relationship('Task', backref='user', lazy=True)
 
-class Task(db.Model):
+class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    task = db.Column(db.String(120), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    username = data['username']
-    password = data['password']
-
+    username = request.json.get('username')
+    password = request.json.get('password')
     if User.query.filter_by(username=username).first():
-        return jsonify({'message': 'Username already exists'}), 400
-
-    hashed_password = generate_password_hash(password, method='sha256')
+        return jsonify({'message': 'User already exists'}), 409
+    hashed_password = bcrypt.generate_password_hash(password)
     new_user = User(username=username, password_hash=hashed_password)
     db.session.add(new_user)
     db.session.commit()
-
     return jsonify({'message': 'User created successfully'}), 201
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    username = data['username']
-    password = data['password']
-
+    username = request.json.get('username')
+    password = request.json.get('password')
     user = User.query.filter_by(username=username).first()
-    if not user or not check_password_hash(user.password_hash, password):
+    if not user or not bcrypt.check_password_hash(user.password_hash, password):
         return jsonify({'message': 'Invalid credentials'}), 401
+    access_token = create_access_token(identity=user.id)
+    return jsonify(access_token=access_token)
 
-    return jsonify({'message': 'Login successful'}), 200
-
-@app.route('/tasks', methods=['POST'])
-def create_task():
-    data = request.get_json()
-    title = data['title']
-    description = data['description']
-    user_id = data['user_id']
-
-    new_task = Task(title=title, description=description, user_id=user_id)
-    db.session.add(new_task)
+@app.route('/todos', methods=['POST'])
+@jwt_required()
+def create_todo():
+    current_user_id = get_jwt_identity()
+    task = request.json.get('task')
+    new_todo = Todo(task=task, user_id=current_user_id)
+    db.session.add(new_todo)
     db.session.commit()
+    return jsonify({'message': 'Todo created successfully'}), 201
 
-    return jsonify({'message': 'Task created successfully'}), 201
+@app.route('/todos', methods=['GET'])
+@jwt_required()
+def get_todos():
+    current_user_id = get_jwt_identity()
+    todos = Todo.query.filter_by(user_id=current_user_id).all()
+    return jsonify([{'id': todo.id, 'task': todo.task, 'completed': todo.completed} for todo in todos])
 
-@app.route('/tasks', methods=['GET'])
-def get_tasks():
-    tasks = Task.query.all()
-    task_list = [{'id': task.id, 'title': task.title, 'description': task.description, 'completed': task.completed} for task in tasks]
-    return jsonify({'tasks': task_list}), 200
-
-@app.route('/tasks/<int:task_id>', methods=['PUT'])
-def update_task(task_id):
-    data = request.get_json()
-    title = data['title']
-    description = data['description']
-    completed = data['completed']
-
-    task = Task.query.get_or_404(task_id)
-    task.title = title
-    task.description = description
-    task.completed = completed
-
+@app.route('/todos/<int:todo_id>', methods=['PUT'])
+@jwt_required()
+def update_todo(todo_id):
+    current_user_id = get_jwt_identity()
+    todo = Todo.query.filter_by(id=todo_id, user_id=current_user_id).first()
+    if not todo:
+        return jsonify({'message': 'Todo not found'}), 404
+    task = request.json.get('task')
+    completed = request.json.get('completed')
+    todo.task = task
+    todo.completed = completed
     db.session.commit()
+    return jsonify({'message': 'Todo updated successfully'}), 200
 
-    return jsonify({'message': 'Task updated successfully'}), 200
-
-@app.route('/tasks/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
-    task = Task.query.get_or_404(task_id)
-    db.session.delete(task)
+@app.route('/todos/<int:todo_id>', methods=['DELETE'])
+@jwt_required()
+def delete_todo(todo_id):
+    current_user_id = get_jwt_identity()
+    todo = Todo.query.filter_by(id=todo_id, user_id=current_user_id).first()
+    if not todo:
+        return jsonify({'message': 'Todo not found'}), 404
+    db.session.delete(todo)
     db.session.commit()
-
-    return jsonify({'message': 'Task deleted successfully'}), 200
+    return jsonify({'message': 'Todo deleted successfully'}), 200
 
 if __name__ == '__main__':
+    db.create_all()
     app.run(debug=True)
