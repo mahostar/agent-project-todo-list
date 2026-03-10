@@ -6,9 +6,9 @@
     "styles.css"
   ],
   "descriptions": {
-    "app.py": "Refactor routes to use class-based views for better organization and scalability.",
-    "index.html": "Add CSRF protection using Flask-WTF or Flask-CSRFProtect for security purposes.",
-    "script.js": "Enhance JavaScript functionality to improve user interaction and advanced task tracking.",
-    "styles.css": "Styling improvements to create a stunning UI, including animations and responsive design."
+    "app.py": "Main Flask application file that handles routing and logic.",
+    "index.html": "HTML template for the todo list interface.",
+    "script.js": "JavaScript file for handling user interactions and dynamic updates.",
+    "styles.css": "CSS file for styling the todo list interface."
   }
 }

@@ -1,36 +1,36 @@
-// Add event listener to form submission
-document.querySelector('form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent default form submission behavior
-    const taskInput = document.querySelector('input[name="task"]');
-    if (taskInput.value.trim() !== '') { // Check if input is not empty
-        fetch('/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `task=${encodeURIComponent(taskInput.value)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Clear input field and reload page
-            taskInput.value = '';
-            location.reload();
-        });
-    }
-});
+// script.js
 
-// Add event listener to toggle complete links
-document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', function(event) {
-        event.preventDefault(); // Prevent default anchor behavior
-        const todoId = this.getAttribute('href').split('/').pop(); // Extract todo ID from href
-        fetch(`/complete/${todoId}`, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Reload page to update list
-            location.reload();
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to add a new todo item
+    function addTodo(todoText) {
+        const ul = document.querySelector('ul');
+        const li = document.createElement('li');
+        li.textContent = todoText;
+
+        // Create delete button for the new todo item
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', function() {
+            ul.removeChild(li);
         });
+        
+        // Append elements to the list item
+        li.appendChild(deleteBtn);
+        ul.appendChild(li);
+    }
+
+    // Function to handle form submission
+    document.querySelector('form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const input = document.querySelector('input[name="todo"]');
+        const todoText = input.value.trim();
+        if (todoText) {
+            addTodo(todoText);
+            input.value = '';
+        }
     });
 });
+```
+
+This JavaScript file handles user interactions and dynamic updates for the Todo List application. It includes functions to add new todo items and handle form submissions, ensuring that each todo item has a delete button associated with it.
