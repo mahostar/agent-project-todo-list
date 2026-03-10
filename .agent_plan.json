@@ -6,9 +6,9 @@
     "styles.css"
   ],
   "descriptions": {
-    "app.py": "Main Python file for handling backend logic, including user authentication and task management.",
-    "index.html": "HTML template for the frontend, serving as the main interface of the todo list application.",
-    "script.js": "JavaScript file to handle dynamic interactions and functionality on the frontend using modern fetch API.",
-    "styles.css": "CSS stylesheet for styling the UI elements to make the todo list visually appealing."
+    "app.py": "Handles the backend logic for user authentication and task management using an actual database.",
+    "index.html": "The main HTML file that serves as the entry point of the application, incorporating Vue.js for dynamic UI updates.",
+    "script.js": "Contains the JavaScript code to handle client-side interactions, including task creation, editing, and deletion.",
+    "styles.css": "Defines the styling for the application, making it visually appealing with a stunning UI."
   }
 }
