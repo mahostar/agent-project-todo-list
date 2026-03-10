@@ -4,114 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo List</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Todo List</h1>
-        <form id="loginForm" style="display: none;">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" class="form-control" id="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" class="form-control" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <button id="logoutBtn" class="btn btn-danger" style="display: none;">Logout</button>
-        <form id="todoForm">
-            <div class="form-group">
-                <label for="task">Task:</label>
-                <input type="text" class="form-control" id="task" required>
-            </div>
-            <button type="submit" class="btn btn-success">Add Todo</button>
-        </form>
-        <ul id="todoList"></ul>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <script>
-        const apiURL = 'http://localhost:5000';
-
-        function login(username, password) {
-            $.post(`${apiURL}/login`, { username, password })
-                .done(token => {
-                    localStorage.setItem('token', token);
-                    $('#loginForm').hide();
-                    $('#logoutBtn').show();
-                    loadTodos();
-                })
-                .fail(() => alert('Invalid credentials'));
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            $('#loginForm').show();
-            $('#logoutBtn').hide();
-            $('#todoList').empty();
-        }
-
-        function createTodo(task) {
-            $.post(`${apiURL}/todos`, { task }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
-                .done(() => loadTodos())
-                .fail(() => alert('Failed to add todo'));
-        }
-
-        function updateTodo(todoId, completed) {
-            $.put(`${apiURL}/todos/${todoId}`, { completed }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
-                .done(() => loadTodos())
-                .fail(() => alert('Failed to update todo'));
-        }
-
-        function deleteTodo(todoId) {
-            $.ajax({
-                url: `${apiURL}/todos/${todoId}`,
-                type: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                success: () => loadTodos(),
-                error: () => alert('Failed to delete todo')
-            });
-        }
-
-        function loadTodos() {
-            $.get(`${apiURL}/todos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
-                .done(todos => {
-                    $('#todoList').empty();
-                    todos.forEach(todo => {
-                        const li = $('<li>').text(todo.task);
-                        if (todo.completed) {
-                            li.addClass('text-decoration-line-through');
-                        }
-                        li.append(
-                            $('<button>').addClass('btn btn-sm btn-danger ml-2').text('Delete').click(() => deleteTodo(todo.id)),
-                            $('<input>').type('checkbox').prop('checked', todo.completed).change(() => updateTodo(todo.id, !todo.completed))
-                        );
-                        $('#todoList').append(li);
-                    });
-                })
-                .fail(() => alert('Failed to load todos'));
-        }
-
-        $(document).ready(() => {
-            $('#loginForm').on('submit', e => {
-                e.preventDefault();
-                const username = $('#username').val();
-                const password = $('#password').val();
-                login(username, password);
-            });
-
-            $('#logoutBtn').on('click', logout);
-
-            $('#todoForm').on('submit', e => {
-                e.preventDefault();
-                const task = $('#task').val();
-                createTodo(task);
-                $('#task').val('');
-            });
-        });
-    </script>
+    <h1>Todo List</h1>
+    <form action="{{ url_for('AddTodoView.post') }}" method="post">
+        {{ form.hidden_tag() }}
+        <input type="text" name="task" placeholder="New task..." required>
+        <button type="submit">Add Task</button>
+    </form>
+    <ul>
+        {% for todo in todos %}
+            <li class="{{ 'completed' if todo.completed else '' }}">
+                {{ todo.task }} 
+                <a href="{{ url_for('CompleteTodoView.get', todo_id=todo.id) }}">Toggle Complete</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
